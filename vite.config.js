@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/english-site/', // Замените на название вашего репозитория
+  base: '/English-site/', // Исправлено: заглавная буква E
   build: {
     outDir: 'dist'
   }

@@ -6,7 +6,6 @@ const GRAMMAR = [
   { title: "Past Simple", text: "Use for actions in the past: I went to the store yesterday." }
 ];
 
-// ===== COMPONENT =====
 export default function App() {
   const [level, setLevel] = useState("A1");
   const [wordsPool, setWordsPool] = useState([]);
@@ -33,8 +32,8 @@ export default function App() {
       } catch (error) {
         console.error("Error loading facts:", error);
         setFacts([
-          { title: "Brain", text: "Your brain weighs about 1.4 kg and consumes 20% of your energy.", emoji: "🧠", img: null },
-          { title: "Space", text: "The Milky Way galaxy contains over 100 billion stars.", emoji: "🌌", img: null }
+          { title: "Brain", text: "Your brain weighs about 1.4 kg and consumes 20% of your energy.", emoji: "🧠" },
+          { title: "Space", text: "The Milky Way galaxy contains over 100 billion stars.", emoji: "🌌" }
         ]);
       } finally {
         setFactsLoading(false);
@@ -58,9 +57,18 @@ export default function App() {
           const firstWord = availableWords[0];
           setQuizWord(firstWord);
           
-          // Получаем полную информацию о слове
-          const wordInfo = await getWordInfo(firstWord);
-          setCurrentWordInfo(wordInfo);
+          // Получаем информацию о слове
+          try {
+            const wordInfo = await getWordInfo(firstWord);
+            setCurrentWordInfo(wordInfo);
+          } catch (error) {
+            console.error("Error getting word info:", error);
+            setCurrentWordInfo({
+              word: firstWord,
+              translation: getFallbackTranslation(firstWord),
+              allAcceptedAnswers: [getFallbackTranslation(firstWord)]
+            });
+          }
         } else {
           setWordsPool([]);
           setQuizWord(null);
@@ -89,10 +97,8 @@ export default function App() {
     const userAnswerLower = userAnswer.trim().toLowerCase();
     const acceptedAnswers = currentWordInfo.allAcceptedAnswers.map(ans => ans.toLowerCase());
     
-    // Проверяем, совпадает ли ответ пользователя с любым из принятых вариантов
     const isCorrect = acceptedAnswers.some(accepted => 
       accepted.includes(userAnswerLower) || userAnswerLower.includes(accepted) ||
-      // Также проверяем отдельные слова в многословных ответах
       accepted.split(/[,;]\s*/).some(variant => 
         variant.trim() === userAnswerLower ||
         userAnswerLower.split(/\s+/).some(userWord => userWord === variant.trim())
@@ -212,25 +218,9 @@ export default function App() {
             {facts.map((f, i) => (
               <div key={i} className="bg-white rounded shadow p-4 flex flex-col items-center">
                 <div className="w-full h-40 bg-gray-200 rounded mb-2 flex items-center justify-center overflow-hidden">
-                  {f.img ? (
-                    <img 
-                      src={f.img} 
-                      alt={f.title} 
-                      className="w-full h-full object-cover rounded"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML = `
-                          <div class="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 rounded flex items-center justify-center">
-                            <span class="text-4xl">${f.emoji || '🌍'}</span>
-                          </div>
-                        `;
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 rounded flex items-center justify-center">
-                      <span className="text-4xl">{f.emoji || '🌍'}</span>
-                    </div>
-                  )}
+                  <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 rounded flex items-center justify-center">
+                    <span className="text-4xl">{f.emoji || '🌍'}</span>
+                  </div>
                 </div>
                 <h3 className="font-bold text-lg mb-1">{f.title}</h3>
                 <p className="text-gray-700 text-center text-sm">{f.text}</p>
@@ -277,6 +267,7 @@ export default function App() {
   );
 }
 
+// Fallback переводы для основных слов
 const getFallbackTranslation = (word) => {
   const fallbackTranslations = {
     "run": "бегать",

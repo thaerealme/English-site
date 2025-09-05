@@ -18,144 +18,44 @@ export default function App() {
   const [facts, setFacts] = useState([]);
   const [factsLoading, setFactsLoading] = useState(false);
 
-  // Load studied words from localStorage
-  const getStudied = () => JSON.parse(localStorage.getItem("studiedWords") || "[]");
-  const setStudied = (words) => localStorage.setItem("studiedWords", JSON.stringify(words));
-
-  // Load facts from API
+  // Test function to check if JS works
   useEffect(() => {
-    const loadFacts = async () => {
-      setFactsLoading(true);
-      try {
-        const randomFacts = await getRandomFacts(4);
-        setFacts(randomFacts);
-      } catch (error) {
-        console.error("Error loading facts:", error);
-        setFacts([
-          { title: "Brain", text: "Your brain weighs about 1.4 kg and consumes 20% of your energy.", emoji: "🧠" },
-          { title: "Space", text: "The Milky Way galaxy contains over 100 billion stars.", emoji: "🌌" }
-        ]);
-      } finally {
-        setFactsLoading(false);
-      }
-    };
-    
-    loadFacts();
+    console.log("App component loaded successfully!");
   }, []);
 
-  // Load words by level, excluding already studied
-  useEffect(() => {
-    const loadWords = async () => {
-      setIsLoading(true);
-      try {
-        const studied = getStudied();
-        const levelWords = getWordsByLevel(level);
-        const availableWords = levelWords.filter(word => !studied.includes(word));
-        
-        if (availableWords.length > 0) {
-          setWordsPool(availableWords);
-          const firstWord = availableWords[0];
-          setQuizWord(firstWord);
-          
-          // Получаем информацию о слове
-          try {
-            const wordInfo = await getWordInfo(firstWord);
-            setCurrentWordInfo(wordInfo);
-          } catch (error) {
-            console.error("Error getting word info:", error);
-            setCurrentWordInfo({
-              word: firstWord,
-              translation: getFallbackTranslation(firstWord),
-              allAcceptedAnswers: [getFallbackTranslation(firstWord)]
-            });
-          }
-        } else {
-          setWordsPool([]);
-          setQuizWord(null);
-          setCurrentWordInfo(null);
-        }
-      } catch (error) {
-        console.error("Error loading words:", error);
-        setFeedback("❌ Error loading words. Using fallback mode.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadWords();
-    setUserAnswer("");
-    setShowTranslation(false);
-    setFeedback("");
-  }, [level]);
-
-  const handleLevelChange = (e) => setLevel(e.target.value);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!quizWord || !currentWordInfo) return;
-
-    const userAnswerLower = userAnswer.trim().toLowerCase();
-    const acceptedAnswers = currentWordInfo.allAcceptedAnswers.map(ans => ans.toLowerCase());
-    
-    const isCorrect = acceptedAnswers.some(accepted => 
-      accepted.includes(userAnswerLower) || userAnswerLower.includes(accepted) ||
-      accepted.split(/[,;]\s*/).some(variant => 
-        variant.trim() === userAnswerLower ||
-        userAnswerLower.split(/\s+/).some(userWord => userWord === variant.trim())
-      )
-    );
-
-    if (isCorrect) {
-      setFeedback("✅ Correct!");
-      const studied = getStudied();
-      setStudied([...studied, quizWord]);
-      await nextWord();
-    } else {
-      setFeedback("❌ Try again!");
-      setShowTranslation(true);
-    }
-  };
-
-  const nextWord = async () => {
-    const remaining = wordsPool.filter(w => w !== quizWord);
-    setWordsPool(remaining);
-    
-    if (remaining.length > 0) {
-      const nextWord = remaining[0];
-      setQuizWord(nextWord);
-      
-      try {
-        const wordInfo = await getWordInfo(nextWord);
-        setCurrentWordInfo(wordInfo);
-      } catch (error) {
-        console.error("Error getting word info:", error);
-        setCurrentWordInfo({
-          word: nextWord,
-          translation: getFallbackTranslation(nextWord),
-          allAcceptedAnswers: [getFallbackTranslation(nextWord)]
-        });
-      }
-    } else {
-      setQuizWord(null);
-      setCurrentWordInfo(null);
-    }
-    
-    setUserAnswer("");
-    setShowTranslation(false);
-    setFeedback("");
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <header className="text-center mb-8">
-        <h1 className="text-4xl font-bold mb-2">EngLex 🚀</h1>
-        <p className="text-gray-600">Practice English words and learn new facts!</p>
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#f9fafb',
+      padding: '24px',
+      fontFamily: 'system-ui, sans-serif'
+    }}>
+      <header style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <h1 style={{
+          fontSize: '2.25rem',
+          fontWeight: 'bold',
+          marginBottom: '8px',
+          color: '#1f2937'
+        }}>
+          EngLex 🚀
+        </h1>
+        <p style={{ color: '#6b7280' }}>
+          Practice English words and learn new facts!
+        </p>
       </header>
 
       {/* LEVEL SELECT */}
-      <section className="mb-6 text-center">
-        <label className="mr-2 font-semibold">Your level:</label>
-        <select value={level} onChange={handleLevelChange} className="border px-2 py-1 rounded">
+      <section style={{ textAlign: 'center', marginBottom: '24px' }}>
+        <label style={{ marginRight: '8px', fontWeight: '600' }}>Your level:</label>
+        <select 
+          value={level} 
+          onChange={(e) => setLevel(e.target.value)}
+          style={{
+            border: '1px solid #d1d5db',
+            padding: '4px 8px',
+            borderRadius: '4px'
+          }}
+        >
           <option>A1</option>
           <option>A2</option>
           <option>B1</option>
@@ -163,167 +63,122 @@ export default function App() {
         </select>
       </section>
 
-      {/* QUIZ */}
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Practice Words</h2>
-        {isLoading ? (
-          <div className="text-center">
-            <p className="text-gray-600">Loading words...</p>
-          </div>
-        ) : quizWord ? (
-          <div className="bg-white p-6 rounded shadow-md max-w-lg mx-auto">
-            <p className="text-xl mb-2"><strong>Word:</strong> {quizWord}</p>
-            <form onSubmit={handleSubmit}>
-              <input
-                type="text"
-                value={userAnswer}
-                onChange={(e) => setUserAnswer(e.target.value)}
-                placeholder="Type translation"
-                className="border p-2 rounded w-full mb-2"
-                disabled={isLoading}
-              />
-              <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded" disabled={isLoading}>
-                {isLoading ? "Loading..." : "Check"}
-              </button>
-            </form>
-
-            {feedback && <p className="mt-2 font-semibold">{feedback}</p>}
-
-            {showTranslation && currentWordInfo && (
-              <div className="mt-4">
-                <p className="font-semibold">Translation:</p>
-                <p className="text-gray-700">{currentWordInfo.translation}</p>
-                {currentWordInfo.synonyms && currentWordInfo.synonyms.length > 0 && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    Synonyms: {currentWordInfo.synonyms.slice(0, 3).join(', ')}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          <p className="text-center font-semibold text-gray-700">🎉 No more words to study at this level!</p>
-        )}
-      </section>
-
-      {/* FACTS */}
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Interesting Facts 🌍</h2>
-        {factsLoading ? (
-          <div className="text-center">
-            <p className="text-gray-600">Loading facts...</p>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-6">
-            {facts.map((f, i) => (
-              <div key={i} className="bg-white rounded shadow p-4 flex flex-col items-center">
-                <div className="w-full h-40 bg-gray-200 rounded mb-2 flex items-center justify-center overflow-hidden">
-                  <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 rounded flex items-center justify-center">
-                    <span className="text-4xl">{f.emoji || '🌍'}</span>
-                  </div>
-                </div>
-                <h3 className="font-bold text-lg mb-1">{f.title}</h3>
-                <p className="text-gray-700 text-center text-sm">{f.text}</p>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* TEST CONTENT */}
+      <section style={{ marginBottom: '32px' }}>
+        <h2 style={{
+          fontSize: '1.5rem',
+          fontWeight: '600',
+          marginBottom: '16px'
+        }}>
+          Test Section
+        </h2>
         
-        {/* Кнопка для обновления фактов */}
-        <div className="text-center mt-6">
-          <button 
-            onClick={async () => {
-              setFactsLoading(true);
-              try {
-                const newFacts = await getRandomFacts(4);
-                setFacts(newFacts);
-              } catch (error) {
-                console.error("Error refreshing facts:", error);
-              } finally {
-                setFactsLoading(false);
-              }
-            }}
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
-            disabled={factsLoading}
-          >
-            {factsLoading ? "Loading..." : "🔄 Load New Facts"}
-          </button>
+        <div style={{
+          backgroundColor: 'white',
+          padding: '24px',
+          borderRadius: '8px',
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+          maxWidth: '512px',
+          margin: '0 auto'
+        }}>
+          <p style={{
+            fontSize: '1.25rem',
+            marginBottom: '8px'
+          }}>
+            <strong>Test Word:</strong> {quizWord || 'No word loaded'}
+          </p>
+          
+          <div style={{ marginBottom: '16px' }}>
+            <input
+              type="text"
+              value={userAnswer}
+              onChange={(e) => setUserAnswer(e.target.value)}
+              placeholder="Type translation"
+              style={{
+                border: '1px solid #d1d5db',
+                padding: '8px',
+                borderRadius: '4px',
+                width: '100%',
+                marginBottom: '8px'
+              }}
+            />
+            <button 
+              style={{
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              Check
+            </button>
+          </div>
+
+          {feedback && (
+            <p style={{
+              marginTop: '8px',
+              fontWeight: '600',
+              color: feedback.includes('✅') ? '#16a34a' : '#dc2626'
+            }}>
+              {feedback}
+            </p>
+          )}
         </div>
       </section>
 
-      {/* GRAMMAR */}
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">Grammar 📚</h2>
-        <div className="space-y-4">
-          {GRAMMAR.map((g, i) => (
-            <div key={i} className="bg-white rounded shadow p-4">
-              <h3 className="font-bold">{g.title}</h3>
-              <p className="text-gray-700">{g.text}</p>
+      {/* FACTS */}
+      <section style={{ marginBottom: '32px' }}>
+        <h2 style={{
+          fontSize: '1.5rem',
+          fontWeight: '600',
+          marginBottom: '16px'
+        }}>
+          Interesting Facts 🌍
+        </h2>
+        
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '24px'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '16px',
+            borderRadius: '8px',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              width: '100%',
+              height: '160px',
+              backgroundColor: '#f3f4f6',
+              borderRadius: '8px',
+              marginBottom: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '3rem'
+            }}>
+              🌍
             </div>
-          ))}
+            <h3 style={{
+              fontSize: '1.125rem',
+              fontWeight: 'bold',
+              marginBottom: '4px'
+            }}>
+              Test Fact
+            </h3>
+            <p style={{
+              color: '#6b7280',
+              fontSize: '14px'
+            }}>
+              This is a test fact to check if CSS and layout work correctly.
+            </p>
+          </div>
         </div>
       </section>
     </div>
   );
 }
-
-// Fallback переводы для основных слов
-const getFallbackTranslation = (word) => {
-  const fallbackTranslations = {
-    "run": "бегать",
-    "go": "идти", 
-    "come": "приходить",
-    "see": "видеть",
-    "look": "смотреть",
-    "make": "делать",
-    "take": "брать",
-    "get": "получать",
-    "give": "давать",
-    "know": "знать",
-    "think": "думать",
-    "say": "сказать",
-    "find": "находить",
-    "want": "хотеть",
-    "use": "использовать",
-    "work": "работать",
-    "call": "звонить",
-    "try": "пытаться",
-    "need": "нуждаться",
-    "feel": "чувствовать",
-    "good": "хороший",
-    "bad": "плохой",
-    "big": "большой",
-    "small": "маленький",
-    "happy": "счастливый",
-    "sad": "грустный",
-    "hot": "горячий",
-    "cold": "холодный",
-    "young": "молодой",
-    "old": "старый",
-    "long": "длинный",
-    "short": "короткий",
-    "new": "новый",
-    "man": "мужчина",
-    "woman": "женщина",
-    "child": "ребенок",
-    "day": "день",
-    "night": "ночь",
-    "time": "время",
-    "year": "год",
-    "week": "неделя",
-    "home": "дом",
-    "school": "школа",
-    "job": "работа",
-    "life": "жизнь",
-    "money": "деньги",
-    "friend": "друг",
-    "people": "люди",
-    "country": "страна",
-    "city": "город",
-    "place": "место",
-    "water": "вода",
-    "food": "еда"
-  };
-
-  return fallbackTranslations[word] || `${word} (перевод не найден)`;
-};

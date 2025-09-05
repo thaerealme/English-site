@@ -6,10 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "npm run build && cp -r dist/* . && git add . && git commit -m 'Deploy to GitHub Pages' && git push"
   },
   "dependencies": {
     "react": "^18.2.0",
